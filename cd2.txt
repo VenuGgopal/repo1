@@ -1,3 +1,0 @@
-this is cd2.txt
-we are editing java code 
-fetch 

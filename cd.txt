@@ -1,3 +1,0 @@
-...
-name: ven
-age: 25 

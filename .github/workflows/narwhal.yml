@@ -1,0 +1,67 @@
+name: smartnudge workflow
+on: 
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Push package
+    runs-on: ['ubuntu-latest']
+    steps:
+
+    # Checkout the code
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set Version
+      run: echo "PACKAGE_VERSION=$(date +'%Y.%m.%d').$GITHUB_RUN_NUMBER" >> $GITHUB_ENV 
+    
+    - name: Create Artifacts Folder
+      run: |
+        mkdir "$GITHUB_WORKSPACE/artifacts"
+
+    - name: Install Octopus CLI
+      uses: OctopusDeploy/install-octopus-cli-action@v1.1.8
+      with:
+          version: latest 
+
+    - name: Package Functions
+      run: |
+          octo pack --id="s3" --format="Zip" --version="$PACKAGE_VERSION" --basePath="$GITHUB_WORKSPACE" --outFolder="$GITHUB_WORKSPACE/artifacts"          
+    
+    - name: Push code to Octopus
+      uses: OctopusDeploy/push-package-action@v1.1.1
+      with:
+          api_key: "API-ZO0B7EJ4RNY3TQFJMTMII2V10KH3B"
+          server: "https://veanus.octopus.app/"
+          packages: "artifacts/s3.${{ env.PACKAGE_VERSION }}.zip"
+          space: 'awss3'
+          use_delta_compression: false  
+
+  # Create_Release:
+  #   name: Release package
+  #   runs-on: ['ubuntu-latest']
+  #   needs: build
+  #   steps:
+  #   - name: Create a release in Octopus Deploy
+  #     uses: OctopusDeploy/create-release-action@v3
+  #     id: release
+  #     with:
+  #       api_key: "API-ZO0B7EJ4RNY3TQFJMTMII2V10KH3B"
+  #       server: "https://veanus.octopus.app/"
+  #       space: 'awss3'
+  #       project: 'NEW-S3-DEPLOY' 
+      
+    # - name: Deploy a release in Octopus Deploy 🐙
+    #   uses: OctopusDeploy/deploy-release-action@v3
+    #   with:
+    #     api_key: "API-ZO0B7EJ4RNY3TQFJMTMII2V10KH3B"
+    #     server: "https://veanus.octopus.app/"
+    #     space: 'awss3'
+    #     project: 'NEW-S3-DEPLOY'
+    #     release_number: ${{ steps.release.outputs.release_number }}  
+    #     environments: |
+    #         Development
